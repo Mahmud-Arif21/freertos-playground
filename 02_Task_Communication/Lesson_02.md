@@ -4,10 +4,8 @@
 
 This lesson includes two examples showcasing FreeRTOS task communication and control on an ESP32:
 
-1. **Incremental Blink (********`Incremental_Blink.ino`********\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*)**: Demonstrates a sender/receiver model where integer values are passed via a queue to blink an LED multiple times.
-2. **Touch Blink (********`Touch_Blink.ino`********\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*)**: Shows how a touch sensor task can toggle a blinking task, illustrating task suspension and resumption.
-
-> **Note:** FreeRTOS fundamentals (scheduler, tasks) are covered in a separate FreeRTOS overview README.
+1. **Incremental Blink**: Demonstrates a sender/receiver model where integer values are passed via a queue to blink an LED multiple times.
+2. **Touch Blink**: Shows how a touch sensor task can toggle a blinking task, illustrating task suspension and resumption.
 
 ---
 
