@@ -23,7 +23,7 @@ This macro names the physical pin connected to the LED, making it easy to change
 
 ---
 
-### 2. Task Handle Declaration
+### 2. Task Handle Declaration (Task Management)
 
 ```cpp
 // Handle used to manage the LED blink task
@@ -34,7 +34,7 @@ The `TaskHandle_t` variable starts as `NULL` and is populated when the blink tas
 
 ---
 
-### 3. Setup and Task Creation (Task Management, Task Scheduling, Memory Allocation)
+### 3. Setup and Task Creation (Task Scheduling, Memory Allocation)
 
 ```cpp
 void setup() {
