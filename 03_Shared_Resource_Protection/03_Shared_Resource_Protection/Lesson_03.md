@@ -1,4 +1,4 @@
-# ESP32 RTOS Lesson 4: Solving Race Conditions with Mutexes
+# Lesson 4: Solving Race Conditions with Mutexes
 
 ## Introduction
 
@@ -13,17 +13,11 @@ By the end of this lesson, you will:
 3. Protect shared data and peripherals with a mutex
 4. See how mutexes prevent tasks from colliding
 
-## Required Hardware
-
-- ESP32 development board
-- USB cable
-- On‑board LED (GPIO 2)
-
 ---
 
 ## 1. Race Condition Demo
 
-Let’s first see a race condition example by Shawn Hymel. Two tasks increment the same `counter` without any lock:
+Let’s first see a race condition example by **Shawn Hymel**. Two tasks increment the same `counter` without any lock:
 
 ```cpp
 /**
