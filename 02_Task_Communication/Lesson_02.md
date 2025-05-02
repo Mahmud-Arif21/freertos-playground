@@ -30,9 +30,9 @@ QueueHandle_t numberQueue;  // Holds up to 5 ints
 ```
 
 > ### Note: A queue acts like a shared mailmox where tasks can safely send and receive data.
-> **Only one task can access the queue at a time**
-> **Data is retrieved in the same order it was sent**
-> **Tasks can wait for data / space or they can fail immediately**
+> - **Only one task can access the queue at a time**
+> - **Data is retrieved in the same order it was sent**
+> - **Tasks can wait for data / space or they can fail immediately**
 
 #### 2. Task Creation
 
