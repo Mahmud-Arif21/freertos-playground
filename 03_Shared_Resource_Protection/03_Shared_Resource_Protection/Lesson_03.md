@@ -1,4 +1,4 @@
-# Lesson 4: Solving Race Conditions with Mutexes
+# Lesson 4: Shared Resource Protection with Mutexes
 
 ## Introduction
 
