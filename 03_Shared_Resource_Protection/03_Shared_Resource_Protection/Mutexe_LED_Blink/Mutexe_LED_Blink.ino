@@ -53,7 +53,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     blinkTask,    // Task function
     "BlinkA",     // Task name
-    1024,         // Stack size
+    2048,         // Stack size
     (void*)"TaskA",  // Parameter (text)
     1,            // Priority
     NULL,         // Task handle
@@ -63,7 +63,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     blinkTask,
     "BlinkB",
-    1024,
+    2048,
     (void*)"TaskB",
     1,
     NULL,
