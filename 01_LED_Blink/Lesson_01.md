@@ -34,7 +34,7 @@ The `TaskHandle_t` variable starts as `NULL` and is populated when the blink tas
 
 ---
 
-### 3. Setup and Task Creation
+### 3. Setup and Task Creation (Task Management, Task Scheduling, Memory Allocation)
 
 ```cpp
 void setup() {
