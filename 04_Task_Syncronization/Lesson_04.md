@@ -90,6 +90,7 @@ Below are the solutions using **mutex** and **binary semaphore**:
 
 | Scenario                                 | 🔐 Mutex (Key)           | 🚦 Binary Semaphore (Light) | 🧮 Counting Semaphore (Parking Lot) |
 |------------------------------------------|---------------------------|------------------------------|--------------------------------------|
+| Description of the scenario              | 🔐🚪 A door, a lock and a key | 🚦🚪 A door, light signal | 🚧🚗 Parking lot and multiple cars    |
 | One person at a time                     | ✅ Enforced by personal key | ✅ Enforced by light switch    | ❌ Allows multiple people            |
 | Signaling from another person/thread     | ❌ Not allowed              | ✅ Anyone can flip light       | ✅ Anyone can free a spot            |
 | Safety & misuse prevention               | ✅ Very safe                | ❌ Risky if misused            | ❌ Risky if count mismanaged         |
