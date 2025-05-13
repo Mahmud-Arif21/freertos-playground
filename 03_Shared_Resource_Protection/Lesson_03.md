@@ -1,4 +1,4 @@
-# Lesson 4: Shared Resource Protection with Mutexes
+# Lesson 3: Shared Resource Protection with Mutexes
 
 ## Introduction
 
