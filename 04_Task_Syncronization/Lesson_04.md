@@ -23,7 +23,7 @@
 
 ## ❓ Mutex vs Binary Semaphore
 
-Although it seems like that the **mutex** and the **binary semaphore** both are basically the same thing, they have different working method for different applications. Both allow **one thread** in at a time, but behave differently.
+Although mutexes and binary semaphores seem similar because both allow only one thread to access a resource at a time, they work differently and are used in different situations. A mutex is owned by the thread that locks it, and only that thread can unlock it. On the other hand, a binary semaphore doesn’t have ownership, so any thread can signal (release) it. This difference affects how they are used in managing access to shared resources.
 
 | Feature              | 🔐 Mutex                  | 🚦 Binary Semaphore           |
 |----------------------|---------------------------|-------------------------------|
@@ -444,7 +444,7 @@ This illustrates:
 
 ### Visualization
 
-Even with a detailed serial output, the process flow of using counting semaphore may seem a little tricky. The `counting_semaphore_visualization.html` file runs a simple interactive process flow with a counting semaphore with a pool of 2 resources that has to handle 4 tasks. Simply run the script on any browser and visualize each steps using the control buttons. You will find the following UI:
+Even with detailed serial output, understanding the process flow of a counting semaphore can sometimes be challenging. The counting_semaphore_visualization.html file provides a simple, interactive way to visualize how a counting semaphore works. It simulates a scenario with a pool of 2 resources managing 4 tasks. To use it, simply open the file in any web browser and step through the process using the provided control buttons. You will find the following UI:
 
 ![alt text](counting_semaphore_visualization.png)
 
