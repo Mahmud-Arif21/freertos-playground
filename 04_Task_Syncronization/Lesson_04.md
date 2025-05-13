@@ -86,7 +86,7 @@ Below are the solutions using **mutex** and **binary semaphore**:
 
 ---
 
-## ⚖️ Scenario Comparison (Same Analogy)
+## ⚖️ Scenario Comparison
 
 | Scenario                                 | 🔐 Mutex (Key)           | 🚦 Binary Semaphore (Light) | 🧮 Counting Semaphore (Parking Lot) |
 |------------------------------------------|---------------------------|------------------------------|--------------------------------------|
