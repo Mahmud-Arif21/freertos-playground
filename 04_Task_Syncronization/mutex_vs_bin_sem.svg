@@ -1,0 +1,317 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <!-- Styles -->
+  <style>
+    @keyframes flowAnimation {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes pulseTaskA {
+      0%, 100% { fill: #4285f4; }
+      50% { fill: #5c9aff; }
+    }
+    @keyframes pulseTaskB {
+      0%, 100% { fill: #ea4335; }
+      50% { fill: #ff6b5e; }
+    }
+    @keyframes pathAnimation {
+      0% { stroke-dashoffset: 1000; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes resourceAnimation {
+      0%, 100% { fill: #fbbc05; }
+      50% { fill: #fddc85; }
+    }
+    @keyframes lockFlash {
+      0%, 100% { fill: #34a853; }
+      50% { fill: #66ce80; }
+    }
+    @keyframes unlockFlash {
+      0%, 100% { fill: #cccccc; }
+      50% { fill: #eeeeee; }
+    }
+    @keyframes highlightStep1 {
+      0%, 100% { fill: #e8f0fe; }
+      10%, 20% { fill: #dd9999; }
+    }
+    @keyframes highlightStep2 {
+      0%, 100% { fill: #e8f0fe; }
+      20%, 30% { fill: #dd9999; }
+    }
+    @keyframes highlightStep3 {
+      0%, 100% { fill: #e8f0fe; }
+      30%, 40% { fill: #dd9999; }
+    }
+    @keyframes highlightStep4 {
+      0%, 100% { fill: #e8f0fe; }
+      40%, 50% { fill: #dd9999; }
+    }
+    @keyframes highlightStep5 {
+      0%, 100% { fill: #e8f0fe; }
+      50%, 60% { fill: #dd9999; }
+    }
+    @keyframes highlightStep6 {
+      0%, 100% { fill: #e8f0fe; }
+      60%, 70% { fill: #dd9999; }
+    }
+    @keyframes lockPulse {
+      0%, 30%, 100% { fill: #cccccc; }
+      40%, 90% { fill: #34a853; }
+    }
+    @keyframes mutexArrow1 {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    @keyframes mutexArrow2 {
+      0% { opacity: 0; }
+      10%, 50% { opacity: 0; }
+      60% { opacity: 1; }
+      90% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    @keyframes semArrow1 {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      25% { opacity: 1; }
+      30% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    @keyframes semArrow2 {
+      0% { opacity: 0; }
+      30% { opacity: 0; }
+      35% { opacity: 1; }
+      45% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    @keyframes semArrow3 {
+      0% { opacity: 0; }
+      50% { opacity: 0; }
+      55% { opacity: 1; }
+      65% { opacity: 1; }
+      70% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    @keyframes semArrow4 {
+      0% { opacity: 0; }
+      70% { opacity: 0; }
+      75% { opacity: 1; }
+      85% { opacity: 1; }
+      90% { opacity: 0; }
+      100% { opacity: 0; }
+    }
+    .task-a {
+      animation: pulseTaskA 3s infinite;
+    }
+    .task-b {
+      animation: pulseTaskB 3s infinite;
+    }
+    .resource {
+      animation: resourceAnimation 3s infinite;
+    }
+    .mutex-lock {
+      animation: lockPulse 10s infinite;
+    }
+    .sem-lock {
+      animation: lockPulse 10s infinite;
+    }
+    .step1-bg { animation: highlightStep1 10s infinite; }
+    .step2-bg { animation: highlightStep2 10s infinite; }
+    .step3-bg { animation: highlightStep3 10s infinite; }
+    .step4-bg { animation: highlightStep4 10s infinite; }
+    .step5-bg { animation: highlightStep5 10s infinite; }
+    .step6-bg { animation: highlightStep6 10s infinite; }
+    .mutex-arrow1 { animation: mutexArrow1 10s infinite; }
+    .mutex-arrow2 { animation: mutexArrow2 10s infinite; }
+    .sem-arrow1 { animation: semArrow1 10s infinite; }
+    .sem-arrow2 { animation: semArrow2 10s infinite; }
+    .sem-arrow3 { animation: semArrow3 10s infinite; }
+    .sem-arrow4 { animation: semArrow4 10s infinite; }
+    
+    /* Task highlight animations */
+    @keyframes highlightTaskA1 {
+      0%, 100% { stroke: none; stroke-width: 0; }
+      10%, 20% { stroke: #ff0000; stroke-width: 3; }
+    }
+    @keyframes highlightTaskB1 {
+      0%, 100% { stroke: none; stroke-width: 0; }
+      20%, 30% { stroke: #ff0000; stroke-width: 3; }
+    }
+    @keyframes highlightTaskA2 {
+      0%, 100% { stroke: none; stroke-width: 0; }
+      10%, 30% { stroke: #ff0000; stroke-width: 3; }
+    }
+    @keyframes highlightTaskA3 {
+      0%, 100% { stroke: none; stroke-width: 0; }
+      55%, 70% { stroke: #ff0000; stroke-width: 3; }
+    }
+    @keyframes highlightTaskB2 {
+      0%, 100% { stroke: none; stroke-width: 0; }
+      35%, 50% { stroke: #ff0000; stroke-width: 3; }
+    }
+    
+    .task-a-highlight1 { animation: highlightTaskA1 10s infinite; }
+    .task-b-highlight1 { animation: highlightTaskB1 10s infinite; }
+    .task-a-highlight2 { animation: highlightTaskA2 10s infinite; }
+    .task-a-highlight3 { animation: highlightTaskA3 10s infinite; }
+    .task-b-highlight2 { animation: highlightTaskB2 10s infinite; }
+  </style>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#f8f9fa"/>
+
+  <!-- Title -->
+  <text x="450" y="35" font-family="Arial" font-size="24" text-anchor="middle" font-weight="bold">Mutex vs Binary Semaphore Flow</text>
+
+  <!-- Divider -->
+  <line x1="450" y1="60" x2="450" y2="490" stroke="#dddddd" stroke-width="2"/>
+
+  <!-- Mutex Side Title -->
+  <text x="225" y="70" font-family="Arial" font-size="20" text-anchor="middle" font-weight="bold">Mutex</text>
+
+  <!-- Semaphore Side Title -->
+  <text x="675" y="70" font-family="Arial" font-size="20" text-anchor="middle" font-weight="bold">Binary Semaphore</text>
+
+  <!-- MUTEX SIDE -->
+  <g>
+    <!-- Tasks -->
+    <rect x="50" y="120" width="100" height="60" rx="10" class="task-a"/>
+    <rect x="50" y="120" width="100" height="60" rx="10" fill="none" class="task-a-highlight1"/>
+    <text x="100" y="155" font-family="Arial" font-size="16" text-anchor="middle" fill="white" font-weight="bold">Task A</text>
+
+    <rect x="50" y="320" width="100" height="60" rx="10" class="task-b"/>
+    <rect x="50" y="320" width="100" height="60" rx="10" fill="none" class="task-b-highlight1"/>
+    <text x="100" y="355" font-family="Arial" font-size="16" text-anchor="middle" fill="white" font-weight="bold">Task B</text>
+
+    <!-- Resource -->
+    <rect x="300" y="200" width="120" height="80" rx="5" class="resource"/>
+    <text x="360" y="245" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Shared Resource</text>
+
+    <!-- Mutex -->
+    <circle cx="225" cy="240" r="25" class="mutex-lock"/>
+    <text x="225" y="245" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Mutex</text>
+
+    <!-- Arrows -->
+    <path d="M150 150 C200 150, 200 240, 200 240" stroke="#4285f4" stroke-width="3" fill="none" class="mutex-arrow1" stroke-dasharray="5,3"/>
+    <polygon points="200,240 195,230 205,230" fill="#4285f4" class="mutex-arrow1"/>
+
+    <path d="M225 215 L360 215" stroke="#4285f4" stroke-width="3" fill="none" class="mutex-arrow1"/>
+    <polygon points="360,215 350,210 350,220" fill="#4285f4" class="mutex-arrow1"/>
+
+    <path d="M360 265 L225 265" stroke="#4285f4" stroke-width="3" fill="none" class="mutex-arrow1"/>
+    <polygon points="225,265 235,260 235,270" fill="#4285f4" class="mutex-arrow1"/>
+
+    <path d="M250 240 C280 240, 280 150, 150 150" stroke="#4285f4" stroke-width="3" fill="none" class="mutex-arrow1" stroke-dasharray="5,3"/>
+    <polygon points="150,150 160,145 160,155" fill="#4285f4" class="mutex-arrow1"/>
+
+    <!-- Task B arrows (shown later) -->
+    <path d="M150 350 C200 350, 200 240, 200 240" stroke="#ea4335" stroke-width="3" fill="none" class="mutex-arrow2" stroke-dasharray="5,3"/>
+    <polygon points="200,240 195,230 205,230" fill="#ea4335" class="mutex-arrow2"/>
+
+    <path d="M225 215 L360 215" stroke="#ea4335" stroke-width="3" fill="none" class="mutex-arrow2"/>
+    <polygon points="360,215 350,210 350,220" fill="#ea4335" class="mutex-arrow2"/>
+
+    <path d="M360 265 L225 265" stroke="#ea4335" stroke-width="3" fill="none" class="mutex-arrow2"/>
+    <polygon points="225,265 235,260 235,270" fill="#ea4335" class="mutex-arrow2"/>
+
+    <path d="M250 240 C280 240, 280 350, 150 350" stroke="#ea4335" stroke-width="3" fill="none" class="mutex-arrow2" stroke-dasharray="5,3"/>
+    <polygon points="150,350 160,345 160,355" fill="#ea4335" class="mutex-arrow2"/>
+
+    <!-- Steps explanation - Always visible but highlighted when active -->
+    <g>
+      <rect x="50" y="400" width="350" height="25" rx="5" class="step1-bg"/>
+      <text x="60" y="418" font-family="Arial" font-size="14">1. Task A takes mutex and accesses resource</text>
+    </g>
+
+    <g>
+      <rect x="50" y="430" width="350" height="25" rx="5" class="step2-bg"/>
+      <text x="60" y="448" font-family="Arial" font-size="14">2. Task B tries to take mutex but must wait</text>
+    </g>
+
+    <g>
+      <rect x="50" y="460" width="350" height="25" rx="5" class="step3-bg"/>
+      <text x="60" y="478" font-family="Arial" font-size="14">3. Task A gives mutex back when finished</text>
+    </g>
+  </g>
+
+  <!-- SEMAPHORE SIDE -->
+  <g>
+    <!-- Tasks -->
+    <rect x="500" y="120" width="100" height="60" rx="10" class="task-a"/>
+    <rect x="500" y="120" width="100" height="60" rx="10" fill="none" class="task-a-highlight2"/>
+    <rect x="500" y="120" width="100" height="60" rx="10" fill="none" class="task-a-highlight3"/>
+    <text x="550" y="155" font-family="Arial" font-size="16" text-anchor="middle" fill="white" font-weight="bold">Task A</text>
+
+    <rect x="500" y="320" width="100" height="60" rx="10" class="task-b"/>
+    <rect x="500" y="320" width="100" height="60" rx="10" fill="none" class="task-b-highlight2"/>
+    <text x="550" y="355" font-family="Arial" font-size="16" text-anchor="middle" fill="white" font-weight="bold">Task B</text>
+
+    <!-- Resource -->
+    <rect x="750" y="200" width="120" height="80" rx="5" class="resource"/>
+    <text x="810" y="235" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Shared Resource</text>
+    <text x="810" y="255" font-family="Arial" font-size="14" text-anchor="middle">or Communication</text>
+
+    <!-- Semaphore -->
+    <circle cx="675" cy="240" r="25" class="sem-lock"/>
+    <text x="675" y="235" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Binary</text>
+    <text x="675" y="250" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Sem</text>
+
+    <!-- Arrows Task A -->
+    <path d="M600 150 C650 150, 650 240, 650 240" stroke="#4285f4" stroke-width="3" fill="none" class="sem-arrow1" stroke-dasharray="5,3"/>
+    <polygon points="650,240 645,230 655,230" fill="#4285f4" class="sem-arrow1"/>
+
+    <path d="M675 215 L750 215" stroke="#4285f4" stroke-width="3" fill="none" class="sem-arrow1"/>
+    <polygon points="750,215 740,210 740,220" fill="#4285f4" class="sem-arrow1"/>
+
+    <path d="M750 265 L675 265" stroke="#4285f4" stroke-width="3" fill="none" class="sem-arrow1"/>
+    <polygon points="675,265 685,260 685,270" fill="#4285f4" class="sem-arrow1"/>
+
+    <path d="M700 240 C730 240, 730 150, 600 150" stroke="#4285f4" stroke-width="3" fill="none" class="sem-arrow1" stroke-dasharray="5,3"/>
+    <polygon points="600,150 610,145 610,155" fill="#4285f4" class="sem-arrow1"/>
+
+    <!-- Arrows Task B -->
+    <path d="M600 350 C650 350, 650 240, 650 240" stroke="#ea4335" stroke-width="3" fill="none" class="sem-arrow2" stroke-dasharray="5,3"/>
+    <polygon points="650,240 645,230 655,230" fill="#ea4335" class="sem-arrow2"/>
+
+    <path d="M675 215 L750 215" stroke="#ea4335" stroke-width="3" fill="none" class="sem-arrow2"/>
+    <polygon points="750,215 740,210 740,220" fill="#ea4335" class="sem-arrow2"/>
+
+    <path d="M750 265 L675 265" stroke="#ea4335" stroke-width="3" fill="none" class="sem-arrow2"/>
+    <polygon points="675,265 685,260 685,270" fill="#ea4335" class="sem-arrow2"/>
+
+    <path d="M700 240 C730 240, 730 350, 600 350" stroke="#ea4335" stroke-width="3" fill="none" class="sem-arrow2" stroke-dasharray="5,3"/>
+    <polygon points="600,350 610,345 610,355" fill="#ea4335" class="sem-arrow2"/>
+
+    <path d="M550 180 L550 320" stroke="#4285f4" stroke-width="3" fill="none" class="sem-arrow2" stroke-dasharray="5,3"/>
+    <polygon points="550,320 545,310 555,310" fill="#4285f4" class="sem-arrow2"/>
+    <text x="535" y="250" font-family="Arial" font-size="14" font-weight="bold" fill="#4285f4" class="sem-arrow2">give()</text>
+    
+    <!-- Task B to Task A signaling path -->
+    <path d="M550 320 L550 180" stroke="#ea4335" stroke-width="3" fill="none" class="sem-arrow4" stroke-dasharray="5,3"/>
+    <polygon points="550,180 545,190 555,190" fill="#ea4335" class="sem-arrow4"/>
+    <text x="565" y="250" font-family="Arial" font-size="14" font-weight="bold" fill="#ea4335" class="sem-arrow4">give()</text>
+
+    <!-- Steps explanation - Always visible but highlighted when active -->
+    <g>
+      <rect x="500" y="400" width="350" height="25" rx="5" class="step4-bg"/>
+      <text x="510" y="418" font-family="Arial" font-size="14">1. Task A takes semaphore and accesses resource</text>
+    </g>
+
+    <g>
+      <rect x="500" y="430" width="350" height="25" rx="5" class="step5-bg"/>
+      <text x="510" y="448" font-family="Arial" font-size="14">2. Task A gives semaphore to Task B when done</text>
+    </g>
+
+    <g>
+      <rect x="500" y="460" width="350" height="25" rx="5" class="step6-bg"/>
+      <text x="510" y="478" font-family="Arial" font-size="14">3. Task B accesses resource and returns to Task A</text>
+    </g>
+
+    <!-- Key differences -->
+    <rect x="670" y="120" width="200" height="60" rx="5" fill="#fce8e6" stroke="#ea4335"/>
+    <text x="675" y="140" font-family="Arial" font-size="14">Key differences:</text>
+    <text x="675" y="160" font-family="Arial" font-size="12">- Can be used for signaling</text>
+    <text x="675" y="175" font-family="Arial" font-size="12">- No ownership enforcement</text>
+  </g>
+</svg>
