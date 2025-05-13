@@ -1,4 +1,4 @@
-# ESP32 RTOS Lesson 4: Understanding and Using Semaphores
+# Lesson 4: Task Syncronization and Using Semaphores
 
 ## 🧵 Mutex vs Semaphore (Binary & Counting)
 
