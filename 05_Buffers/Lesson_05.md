@@ -1,4 +1,4 @@
-# ESP32 RTOS Lesson 5: Understanding Message Buffers & Stream Buffers
+# Lesson 5: Understanding Message Buffers & Stream Buffers
 
 ## 📚 Prerequisites
 
