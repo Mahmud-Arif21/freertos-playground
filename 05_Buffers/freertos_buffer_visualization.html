@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FreeRTOS Stream Buffer & Message Buffer Visualization</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      color: white;
+      min-height: 100vh;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      margin: 0 auto;
+      max-width: 1200px;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    canvas {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      margin-top: 20px;
+      background: linear-gradient(145deg, #2d3748, #4a5568);
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    #controls {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      background: linear-gradient(145deg, #48bb78, #38a169);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(72, 187, 120, 0.6);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .mode-switch {
+      background: linear-gradient(145deg, #ed8936, #dd6b20);
+      box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4);
+    }
+    .mode-switch:hover {
+      box-shadow: 0 6px 20px rgba(237, 137, 54, 0.6);
+    }
+    #stepDesc {
+      font-weight: 600;
+      margin: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      font-size: 16px;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .mode-indicator {
+      background: linear-gradient(145deg, #805ad5, #6b46c1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 20px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(128, 90, 213, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>FreeRTOS Buffer Visualization</h1>
+    <div class="mode-indicator" id="modeIndicator">Stream Buffer Mode</div>
+
+    <div id="controls">
+      <button class="mode-switch" onclick="toggleMode()">Switch to Message Buffer</button>
+      <button onclick="prevStep()">← Previous</button>
+      <button onclick="nextStep()">Next →</button>
+      <button onclick="reset()">🔄 Reset</button>
+      <button onclick="autoPlay()">▶️ Auto Play</button>
+    </div>
+
+    <p id="stepDesc">Stream Buffer: Continuous data flow - bytes can be written/read in any quantity</p>
+
+    <canvas id="canvas" width="1100" height="600"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stepDesc = document.getElementById("stepDesc");
+    const modeIndicator = document.getElementById("modeIndicator");
+
+    let isStreamMode = true;
+    let steps = 0;
+    let autoPlayTimer;
+    
+    // Stream Buffer State
+    const streamBufferSize = 20;
+    let streamBuffer = new Array(streamBufferSize).fill(0);
+    let streamReadPos = 0;
+    let streamWritePos = 0;
+    let streamBytesAvailable = 0;
+
+    // Message Buffer State
+    const messageBufferSize = 8;
+    let messageBuffer = [];
+    let messageBufferCapacity = messageBufferSize;
+
+    const producers = [
+      { name: "Producer 1", color: "#ff6b6b", state: "Ready", data: "" },
+      { name: "Producer 2", color: "#4ecdc4", state: "Ready", data: "" }
+    ];
+
+    const consumers = [
+      { name: "Consumer 1", color: "#45b7d1", state: "Ready", data: "" },
+      { name: "Consumer 2", color: "#f9ca24", state: "Ready", data: "" }
+    ];
+
+    const streamSteps = [
+      () => updateStep("Stream Buffer initialized (20 bytes capacity) - continuous data flow"),
+      () => streamWrite(0, "HELLO", 5),
+      () => streamWrite(1, "WORLD", 5),
+      () => streamRead(0, 3),
+      () => streamWrite(0, "123", 3),
+      () => streamRead(1, 7),
+      () => streamRead(0, 5),
+      () => updateStep("Stream buffer operations complete - data flows continuously")
+    ];
+
+    const messageSteps = [
+      () => updateStep("Message Buffer initialized (8 message capacity) - discrete message passing"),
+      () => messageWrite(0, "MSG1"),
+      () => messageWrite(1, "MSG2"),
+      () => messageWrite(0, "MSG3"),
+      () => messageRead(0),
+      () => messageWrite(1, "MSG4"),
+      () => messageRead(1),
+      () => messageRead(0),
+      () => messageRead(1),
+      () => updateStep("Message buffer operations complete - discrete messages processed")
+    ];
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      if (isStreamMode) {
+        drawStreamBuffer();
+      } else {
+        drawMessageBuffer();
+      }
+      
+      drawTasks();
+    }
+
+    function drawStreamBuffer() {
+      // Title
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 18px Arial";
+      ctx.fillText("Stream Buffer (Continuous Data Flow)", 550, 30);
+
+      // Buffer visualization
+      const bufferX = 300;
+      const bufferY = 60;
+      const cellWidth = 25;
+      const cellHeight = 30;
+
+      for (let i = 0; i < streamBufferSize; i++) {
+        const x = bufferX + (i % 10) * cellWidth;
+        const y = bufferY + Math.floor(i / 10) * cellHeight;
+        
+        // Cell background
+        if (streamBuffer[i] !== 0) {
+          ctx.fillStyle = "#4ade80";
+        } else {
+          ctx.fillStyle = "#374151";
+        }
+        ctx.fillRect(x, y, cellWidth - 1, cellHeight - 1);
+        
+        // Cell border
+        ctx.strokeStyle = "#6b7280";
+        ctx.strokeRect(x, y, cellWidth - 1, cellHeight - 1);
+        
+        // Cell content
+        if (streamBuffer[i] !== 0) {
+          ctx.fillStyle = "#000";
+          ctx.font = "12px Arial";
+          ctx.fillText(String.fromCharCode(streamBuffer[i]), x + 8, y + 20);
+        }
+      }
+
+      // Read/Write pointers
+      const readX = bufferX + (streamReadPos % 10) * cellWidth;
+      const readY = bufferY + Math.floor(streamReadPos / 10) * cellHeight;
+      const writeX = bufferX + (streamWritePos % 10) * cellWidth;
+      const writeY = bufferY + Math.floor(streamWritePos / 10) * cellHeight;
+
+      // Read pointer
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(readX, readY - 8, cellWidth - 1, 4);
+      ctx.fillText("R", readX + 8, readY - 10);
+
+      // Write pointer
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillRect(writeX, writeY + cellHeight + 4, cellWidth - 1, 4);
+      ctx.fillText("W", writeX + 8, writeY + cellHeight + 18);
+
+      // Buffer info
+      ctx.fillStyle = "#fff";
+      ctx.font = "14px Arial";
+      ctx.fillText(`Available: ${streamBytesAvailable} bytes`, bufferX, bufferY + 90);
+      ctx.fillText(`Free: ${streamBufferSize - streamBytesAvailable} bytes`, bufferX + 150, bufferY + 90);
+    }
+
+    function drawMessageBuffer() {
+      // Title
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 18px Arial";
+      ctx.fillText("Message Buffer (Discrete Messages)", 550, 30);
+
+      // Message slots
+      const slotX = 350;
+      const slotY = 60;
+      const slotWidth = 80;
+      const slotHeight = 40;
+
+      for (let i = 0; i < messageBufferCapacity; i++) {
+        const x = slotX + (i % 4) * (slotWidth + 10);
+        const y = slotY + Math.floor(i / 4) * (slotHeight + 10);
+        
+        // Slot background
+        if (i < messageBuffer.length) {
+          ctx.fillStyle = "#4ade80";
+        } else {
+          ctx.fillStyle = "#374151";
+        }
+        ctx.fillRect(x, y, slotWidth, slotHeight);
+        
+        // Slot border
+        ctx.strokeStyle = "#6b7280";
+        ctx.strokeRect(x, y, slotWidth, slotHeight);
+        
+        // Message content
+        if (i < messageBuffer.length) {
+          ctx.fillStyle = "#000";
+          ctx.font = "12px Arial";
+          ctx.fillText(messageBuffer[i], x + 10, y + 25);
+        }
+      }
+
+      // Buffer info
+      ctx.fillStyle = "#fff";
+      ctx.font = "14px Arial";
+      ctx.fillText(`Messages: ${messageBuffer.length}/${messageBufferCapacity}`, slotX, slotY + 130);
+      ctx.fillText(`Available slots: ${messageBufferCapacity - messageBuffer.length}`, slotX + 200, slotY + 130);
+    }
+
+    function drawTasks() {
+      // Producers
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 16px Arial";
+      ctx.fillText("Producers", 80, 200);
+
+      producers.forEach((producer, i) => {
+        const x = 50;
+        const y = 220 + i * 100;
+        
+        // Task box
+        ctx.fillStyle = producer.color;
+        ctx.fillRect(x, y, 120, 60);
+        ctx.fillStyle = "#fff";
+        ctx.font = "14px Arial";
+        ctx.fillText(producer.name, x + 10, y + 20);
+        ctx.fillText(producer.state, x + 10, y + 40);
+        if (producer.data) {
+          ctx.fillText(`Data: ${producer.data}`, x + 10, y + 55);
+        }
+
+        // Arrow to buffer
+        if (producer.state === "Writing") {
+          drawArrow(x + 120, y + 30, 300, 100, producer.color);
+        }
+      });
+
+      // Consumers
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 16px Arial";
+      ctx.fillText("Consumers", 900, 200);
+
+      consumers.forEach((consumer, i) => {
+        const x = 870;
+        const y = 220 + i * 100;
+        
+        // Task box
+        ctx.fillStyle = consumer.color;
+        ctx.fillRect(x, y, 120, 60);
+        ctx.fillStyle = "#fff";
+        ctx.font = "14px Arial";
+        ctx.fillText(consumer.name, x + 10, y + 20);
+        ctx.fillText(consumer.state, x + 10, y + 40);
+        if (consumer.data) {
+          ctx.fillText(`Read: ${consumer.data}`, x + 10, y + 55);
+        }
+
+        // Arrow from buffer
+        if (consumer.state === "Reading") {
+          drawArrow(650, 100, x, y + 30, consumer.color);
+        }
+      });
+    }
+
+    function drawArrow(fromX, fromY, toX, toY, color) {
+      const headlen = 10;
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const angle = Math.atan2(dy, dx);
+      
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.lineTo(toX, toY);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function streamWrite(producerIndex, data, bytes) {
+      const producer = producers[producerIndex];
+      producer.state = "Writing";
+      producer.data = data;
+      
+      for (let i = 0; i < bytes && i < data.length; i++) {
+        if (streamBytesAvailable < streamBufferSize) {
+          streamBuffer[streamWritePos] = data.charCodeAt(i);
+          streamWritePos = (streamWritePos + 1) % streamBufferSize;
+          streamBytesAvailable++;
+        }
+      }
+      
+      setTimeout(() => {
+        producer.state = "Ready";
+        producer.data = "";
+      }, 1000);
+      
+      updateStep(`${producer.name} wrote "${data}" (${bytes} bytes) to stream buffer`);
+    }
+
+    function streamRead(consumerIndex, bytes) {
+      const consumer = consumers[consumerIndex];
+      consumer.state = "Reading";
+      let readData = "";
+      
+      const actualBytes = Math.min(bytes, streamBytesAvailable);
+      for (let i = 0; i < actualBytes; i++) {
+        readData += String.fromCharCode(streamBuffer[streamReadPos]);
+        streamBuffer[streamReadPos] = 0;
+        streamReadPos = (streamReadPos + 1) % streamBufferSize;
+        streamBytesAvailable--;
+      }
+      
+      consumer.data = readData;
+      
+      setTimeout(() => {
+        consumer.state = "Ready";
+        consumer.data = "";
+      }, 1000);
+      
+      updateStep(`${consumer.name} read "${readData}" (${actualBytes} bytes) from stream buffer`);
+    }
+
+    function messageWrite(producerIndex, message) {
+      const producer = producers[producerIndex];
+      producer.state = "Writing";
+      producer.data = message;
+      
+      if (messageBuffer.length < messageBufferCapacity) {
+        messageBuffer.push(message);
+        updateStep(`${producer.name} wrote message "${message}" to message buffer`);
+      } else {
+        updateStep(`${producer.name} tried to write "${message}" but buffer is full!`);
+      }
+      
+      setTimeout(() => {
+        producer.state = "Ready";
+        producer.data = "";
+      }, 1000);
+    }
+
+    function messageRead(consumerIndex) {
+      const consumer = consumers[consumerIndex];
+      consumer.state = "Reading";
+      
+      if (messageBuffer.length > 0) {
+        const message = messageBuffer.shift();
+        consumer.data = message;
+        updateStep(`${consumer.name} read message "${message}" from message buffer`);
+      } else {
+        updateStep(`${consumer.name} tried to read but buffer is empty!`);
+      }
+      
+      setTimeout(() => {
+        consumer.state = "Ready";
+        consumer.data = "";
+      }, 1000);
+    }
+
+    function updateStep(text) {
+      stepDesc.textContent = text;
+      draw();
+    }
+
+    function nextStep() {
+      const currentSteps = isStreamMode ? streamSteps : messageSteps;
+      if (steps < currentSteps.length) {
+        currentSteps[steps]();
+        steps++;
+      }
+    }
+
+    function prevStep() {
+      if (steps > 0) {
+        reset();
+        const currentSteps = isStreamMode ? streamSteps : messageSteps;
+        for (let i = 0; i < steps - 1; i++) {
+          currentSteps[i]();
+        }
+        steps = Math.max(0, steps - 1);
+      }
+    }
+
+    function reset() {
+      steps = 0;
+      
+      // Reset stream buffer
+      streamBuffer = new Array(streamBufferSize).fill(0);
+      streamReadPos = 0;
+      streamWritePos = 0;
+      streamBytesAvailable = 0;
+      
+      // Reset message buffer
+      messageBuffer = [];
+      
+      // Reset tasks
+      producers.forEach(p => { p.state = "Ready"; p.data = ""; });
+      consumers.forEach(c => { c.state = "Ready"; c.data = ""; });
+      
+      if (autoPlayTimer) clearInterval(autoPlayTimer);
+      
+      const initialText = isStreamMode ? 
+        "Stream Buffer: Continuous data flow - bytes can be written/read in any quantity" :
+        "Message Buffer: Discrete message passing - complete messages only";
+      updateStep(initialText);
+    }
+
+    function toggleMode() {
+      isStreamMode = !isStreamMode;
+      const button = document.querySelector('.mode-switch');
+      const indicator = document.getElementById('modeIndicator');
+      
+      if (isStreamMode) {
+        button.textContent = "Switch to Message Buffer";
+        indicator.textContent = "Stream Buffer Mode";
+      } else {
+        button.textContent = "Switch to Stream Buffer";
+        indicator.textContent = "Message Buffer Mode";
+      }
+      
+      reset();
+    }
+
+    function autoPlay() {
+      reset();
+      const currentSteps = isStreamMode ? streamSteps : messageSteps;
+      let i = 0;
+      autoPlayTimer = setInterval(() => {
+        if (i < currentSteps.length) {
+          currentSteps[i]();
+          i++;
+        } else {
+          clearInterval(autoPlayTimer);
+        }
+      }, 2500);
+    }
+
+    // Initialize
+    draw();
+  </script>
+</body>
+</html>
