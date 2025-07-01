@@ -5,8 +5,7 @@
  * Receiver task toggles LED based on intensity and logs to Serial.
  * 
  * Date: June 23, 2025
- * Author: XAI Assistant
- * License: 0BSD
+ * Author: Abdullahil Mahmud Arif
  */
 
 #include <Arduino.h>
