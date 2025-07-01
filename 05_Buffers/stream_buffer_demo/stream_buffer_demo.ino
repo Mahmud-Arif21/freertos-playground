@@ -5,8 +5,7 @@
  * Sender task streams simulated sensor data (incrementing numbers), receiver task logs them to Serial.
  * 
  * Date: June 23, 2025
- * Author: XAI Assistant
- * License: 0BSD
+ * Author: Abdullahil Mahmud Arif
  */
 
 #include <Arduino.h>
