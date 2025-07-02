@@ -1,0 +1,827 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FreeRTOS Timing Mechanisms Visualization</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 10px;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 15px;
+      width: 90%;
+      max-width: 1100px;
+      box-shadow: 0 6px 24px rgba(31, 38, 135, 0.37);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    canvas {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      margin-top: 10px;
+      background: linear-gradient(145deg, #2d3748, #4a5568);
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 1000px;
+      height: 500px;
+    }
+    #controls {
+      margin: 10px 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 8px 16px;
+      background: linear-gradient(145deg, #48bb78, #38a169);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 10px rgba(72, 187, 120, 0.4);
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.6);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .mode-switch {
+      background: linear-gradient(145deg, #ed8936, #dd6b20);
+      box-shadow: 0 3px 10px rgba(237, 137, 54, 0.4);
+    }
+    .mode-switch:hover {
+      box-shadow: 0 4px 15px rgba(237, 137, 54, 0.6);
+    }
+    #stepDesc {
+      font-weight: 600;
+      margin: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      margin-bottom: 8px;
+      font-size: 1.8em;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    .mode-indicator {
+      background: linear-gradient(145deg, #805ad5, #6b46c1);
+      padding: 6px 12px;
+      border-radius: 15px;
+      display: inline-block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 12px;
+      box-shadow: 0 3px 10px rgba(128, 90, 213, 0.4);
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+    .legend-color {
+      width: 15px;
+      height: 10px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>FreeRTOS Timing Mechanisms</h1>
+    <div class="mode-indicator" id="modeIndicator">Software Timers Mode</div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ff6b6b;"></div>
+        <span>Running Task</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #4ecdc4;"></div>
+        <span>Ready Task</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ffd93d;"></div>
+        <span>Blocked Task</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #6c5ce7;"></div>
+        <span>Timer Callback</span>
+      </div>
+    </div>
+
+    <div id="controls">
+      <button class="mode-switch" onclick="switchMode()">Switch Mode</button>
+      <button onclick="prevStep()">← Previous</button>
+      <button onclick="nextStep()">Next →</button>
+      <button onclick="reset()">🔄 Reset</button>
+      <button onclick="autoPlay()">▶️ Auto Play</button>
+      <button onclick="pausePlay()">⏸️ Pause</button>
+    </div>
+
+    <p id="stepDesc">Software Timers: Non-blocking callbacks executed by timer daemon task</p>
+
+    <canvas id="canvas" width="1000" height="500"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const stepDesc = document.getElementById("stepDesc");
+    const modeIndicator = document.getElementById("modeIndicator");
+
+    let currentMode = 0; // 0: Software Timers, 1: millis(), 2: vTaskDelay, 3: delay()
+    const modes = ['Software Timers', 'millis()', 'vTaskDelay', 'delay()'];
+    let steps = 0;
+    let autoPlayTimer;
+    let systemTicks = 0;
+    let isPaused = false;
+
+    // Task states
+    const TASK_READY = 0;
+    const TASK_RUNNING = 1;
+    const TASK_BLOCKED = 2;
+    const TASK_SUSPENDED = 3;
+
+    // Common tasks
+    let tasks = [
+      { name: "Task A", priority: 2, state: TASK_READY, color: "#ff6b6b", delayTime: 0, lastExecution: 0, code: "", timeline: [] },
+      { name: "Task B", priority: 1, state: TASK_READY, color: "#4ecdc4", delayTime: 0, lastExecution: 0, code: "", timeline: [] },
+      { name: "Task C", priority: 0, state: TASK_READY, color: "#74b9ff", delayTime: 0, lastExecution: 0, code: "", timeline: [] }
+    ];
+
+    // Software timers
+    let softwareTimers = [
+      { name: "Timer 1", period: 100, lastFired: 0, callback: "LED_Toggle", active: false, color: "#6c5ce7" },
+      { name: "Timer 2", period: 200, lastFired: 0, callback: "Sensor_Read", active: false, color: "#a29bfe" }
+    ];
+
+    let timerDaemonTask = { name: "Timer Daemon", state: TASK_READY, color: "#fd79a8", executing: "" };
+
+    // Step definitions for each mode
+    const stepDefinitions = {
+      0: [ // Software Timers
+        () => initSoftwareTimers(),
+        () => startTimer(0),
+        () => advanceTime(50),
+        () => startTimer(1),
+        () => advanceTime(50),
+        () => executeTimerCallback(0),
+        () => advanceTime(50),
+        () => advanceTime(50),
+        () => executeTimerCallback(1),
+        () => advanceTime(50),
+        () => executeTimerCallback(0),
+        () => updateStep("Software timers run independently, callbacks execute in timer daemon context")
+      ],
+      1: [ // millis()
+        () => initMillisMode(),
+        () => taskCheckTime(0, "millis()"),
+        () => advanceTime(25),
+        () => taskCheckTime(1, "millis()"),
+        () => advanceTime(25),
+        () => taskCheckTime(2, "millis()"),
+        () => advanceTime(50),
+        () => taskTimedAction(0),
+        () => advanceTime(50),
+        () => taskTimedAction(1),
+        () => updateStep("millis() provides non-blocking time checks - tasks remain responsive")
+      ],
+      2: [ // vTaskDelay
+        () => initTaskDelayMode(),
+        () => taskDelay(0, 100),
+        () => advanceTime(25),
+        () => taskDelay(1, 150),
+        () => advanceTime(25),
+        () => advanceTime(50),
+        () => resumeTask(0),
+        () => advanceTime(25),
+        () => advanceTime(50),
+        () => resumeTask(1),
+        () => updateStep("vTaskDelay blocks tasks, allowing other tasks to run - RTOS managed")
+      ],
+      3: [ // delay()
+        () => initDelayMode(),
+        () => taskBusyDelay(0, 100),
+        () => advanceTime(25),
+        () => advanceTime(25),
+        () => advanceTime(25),
+        () => advanceTime(25),
+        () => taskDelayComplete(0),
+        () => taskBusyDelay(1, 150),
+        () => advanceTime(50),
+        () => advanceTime(50),
+        () => advanceTime(50),
+        () => taskDelayComplete(1),
+        () => updateStep("delay() blocks CPU completely - no other tasks can run!")
+      ]
+    };
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      drawSystemInfo();
+      
+      switch(currentMode) {
+        case 0: drawSoftwareTimers(); break;
+        case 1: drawMillisMode(); break;
+        case 2: drawTaskDelayMode(); break;
+        case 3: drawDelayMode(); break;
+      }
+      
+      drawTasks();
+      drawTimeline();
+    }
+
+    function drawSystemInfo() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 16px Arial";
+      ctx.fillText(`${modes[currentMode]} Demonstration`, 500, 25);
+      
+      // System tick counter
+      ctx.font = "14px Arial";
+      ctx.fillText(`Ticks: ${systemTicks}`, 30, 25);
+      ctx.fillText(`Time: ${systemTicks}ms`, 150, 25);
+      
+      // RTOS Scheduler status
+      const schedulerActive = currentMode !== 3;
+      ctx.fillStyle = schedulerActive ? "#4ade80" : "#ef4444";
+      ctx.fillText(`RTOS: ${schedulerActive ? "ACTIVE" : "BLOCKED"}`, 800, 25);
+    }
+
+    function drawSoftwareTimers() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText("Software Timers", 150, 60);
+      
+      softwareTimers.forEach((timer, i) => {
+        const x = 50;
+        const y = 80 + i * 70;
+        
+        // Timer box
+        ctx.fillStyle = timer.active ? timer.color : "#374151";
+        ctx.fillRect(x, y, 180, 40);
+        
+        // Timer info
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px Arial";
+        ctx.fillText(timer.name, x + 8, y + 15);
+        ctx.fillText(`Period: ${timer.period}ms`, x + 8, y + 28);
+        ctx.fillText(`Callback: ${timer.callback}`, x + 90, y + 15);
+        ctx.fillText(`Next: ${timer.lastFired + timer.period}ms`, x + 90, y + 28);
+        
+        // Timer progress bar
+        if (timer.active) {
+          const progress = ((systemTicks - timer.lastFired) % timer.period) / timer.period;
+          ctx.fillStyle = "#4ade80";
+          ctx.fillRect(x, y + 40, 180 * progress, 4);
+        }
+      });
+
+      // Timer Daemon Task
+      const x = 50;
+      const y = 220;
+      ctx.fillStyle = timerDaemonTask.state === TASK_RUNNING ? timerDaemonTask.color : "#374151";
+      ctx.fillRect(x, y, 180, 40);
+      
+      ctx.fillStyle = "#fff";
+      ctx.font = "10px Arial";
+      ctx.fillText(timerDaemonTask.name, x + 8, y + 15);
+      ctx.fillText(`State: ${timerDaemonTask.state === TASK_RUNNING ? "RUNNING" : "READY"}`, x + 8, y + 28);
+      if (timerDaemonTask.executing) {
+        ctx.fillText(`Exec: ${timerDaemonTask.executing}`, x + 90, y + 15);
+      }
+    }
+
+    function drawMillisMode() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText("millis() Function", 150, 60);
+      
+      // System tick source
+      ctx.fillStyle = "#4ade80";
+      ctx.fillRect(50, 80, 180, 40);
+      
+      ctx.fillStyle = "#000";
+      ctx.font = "10px Arial";
+      ctx.fillText("System Tick Counter", 58, 95);
+      ctx.fillText(`Value: ${systemTicks}`, 58, 108);
+      
+      ctx.fillStyle = "#fff";
+      ctx.fillText("✓ Non-blocking", 58, 135);
+      ctx.fillText("✓ Always available", 58, 148);
+      ctx.fillText("✓ 1ms resolution", 58, 161);
+    }
+
+    function drawTaskDelayMode() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText("vTaskDelay() Function", 150, 60);
+      
+      // RTOS Scheduler
+      ctx.fillStyle = "#4ade80";
+      ctx.fillRect(50, 80, 180, 40);
+      
+      ctx.fillStyle = "#000";
+      ctx.font = "10px Arial";
+      ctx.fillText("RTOS Scheduler", 58, 95);
+      ctx.fillText("Managing Tasks", 58, 108);
+      
+      ctx.fillStyle = "#fff";
+      ctx.fillText("✓ Blocks task", 58, 135);
+      ctx.fillText("✓ Others run", 58, 148);
+      ctx.fillText("✓ Tick-accurate", 58, 161);
+    }
+
+    function drawDelayMode() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText("delay() Function", 150, 60);
+      
+      // CPU busy wait
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(50, 80, 180, 40);
+      
+      ctx.fillStyle = "#fff";
+      ctx.font = "10px Arial";
+      ctx.fillText("CPU Busy Wait", 58, 95);
+      ctx.fillText("Blocking", 58, 108);
+      
+      ctx.fillText("✗ Blocks CPU", 58, 135);
+      ctx.fillText("✗ No switching", 58, 148);
+      ctx.fillText("✗ Wastes cycles", 58, 161);
+    }
+
+    function drawTasks() {
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText("Tasks", 450, 60);
+      
+      tasks.forEach((task, i) => {
+        const x = 350 + (i % 2) * 190;
+        const y = 80 + Math.floor(i / 2) * 90;
+        
+        // Task box
+        let taskColor;
+        switch(task.state) {
+          case TASK_RUNNING: taskColor = "#ff6b6b"; break;
+          case TASK_READY: taskColor = "#4ecdc4"; break;
+          case TASK_BLOCKED: taskColor = "#ffd93d"; break;
+          case TASK_SUSPENDED: taskColor = "#a0a0a0"; break;
+          default: taskColor = "#374151";
+        }
+        
+        ctx.fillStyle = taskColor;
+        ctx.fillRect(x, y, 180, 80);
+        
+        // Task info
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 12px Arial";
+        ctx.fillText(task.name, x + 8, y + 15);
+        
+        ctx.font = "10px Arial";
+        ctx.fillText(`Pri: ${task.priority}`, x + 8, y + 30);
+        ctx.fillText(getStateString(task.state), x + 8, y + 45);
+        
+        if (task.delayTime > 0) {
+          ctx.fillText(`Delay: ${task.delayTime}ms`, x + 90, y + 30);
+        }
+        
+        if (task.code) {
+          ctx.fillText(`Code: ${task.code}`, x + 8, y + 60);
+        }
+        
+        if (task.lastExecution > 0) {
+          ctx.fillText(`Last: ${task.lastExecution}ms`, x + 90, y + 45);
+        }
+      });
+    }
+
+    function drawTimeline() {
+      const timelineY = 350;
+      const timelineWidth = 900;
+      const timelineHeight = 120;
+      
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText("Execution Timeline", 500, timelineY - 8);
+      
+      // Timeline background
+      ctx.fillStyle = "#374151";
+      ctx.fillRect(50, timelineY, timelineWidth, timelineHeight);
+      
+      // Time markers
+      ctx.fillStyle = "#6b7280";
+      for (let t = 0; t <= systemTicks + 50; t += 25) {
+        const x = 50 + (t / (systemTicks + 50)) * timelineWidth;
+        ctx.fillRect(x, timelineY, 1, timelineHeight);
+        ctx.fillStyle = "#fff";
+        ctx.font = "8px Arial";
+        ctx.fillText(`${t}ms`, x - 8, timelineY + timelineHeight + 10);
+        ctx.fillStyle = "#6b7280";
+      }
+      
+      // Draw task execution timeline
+      tasks.forEach((task, taskIndex) => {
+        const taskY = timelineY + 15 + taskIndex * 25;
+        const taskHeight = 20;
+        
+        task.timeline.forEach(segment => {
+          const startX = 50 + (segment.start / (systemTicks + 50)) * timelineWidth;
+          const endX = 50 + (segment.end / (systemTicks + 50)) * timelineWidth;
+          
+          ctx.fillStyle = segment.color;
+          ctx.fillRect(startX, taskY, endX - startX, taskHeight);
+          
+          // Add text if segment is wide enough
+          if (endX - startX > 25) {
+            ctx.fillStyle = "#000";
+            ctx.font = "8px Arial";
+            ctx.fillText(segment.label, startX + 4, taskY + 12);
+          }
+        });
+        
+        // Task name
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px Arial";
+        ctx.fillText(task.name, 10, taskY + 12);
+      });
+      
+      // Current time indicator
+      const currentX = 50 + (systemTicks / (systemTicks + 50)) * timelineWidth;
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(currentX, timelineY);
+      ctx.lineTo(currentX, timelineY + timelineHeight);
+      ctx.stroke();
+    }
+
+    function getStateString(state) {
+      switch(state) {
+        case TASK_READY: return "Ready";
+        case TASK_RUNNING: return "Running";
+        case TASK_BLOCKED: return "Blocked";
+        case TASK_SUSPENDED: return "Suspended";
+        default: return "Unknown";
+      }
+    }
+
+    // Mode initialization functions
+    function initSoftwareTimers() {
+      updateStep("Software Timers initialized - callbacks execute asynchronously");
+      addTimelineSegment(0, systemTicks, systemTicks + 10, "#4ecdc4", "Ready");
+      addTimelineSegment(1, systemTicks, systemTicks + 10, "#4ecdc4", "Ready");
+      addTimelineSegment(2, systemTicks, systemTicks + 10, "#4ecdc4", "Ready");
+    }
+
+    function startTimer(index) {
+      const timer = softwareTimers[index];
+      timer.active = true;
+      timer.lastFired = systemTicks;
+      updateStep(`${timer.name} started - will fire every ${timer.period}ms`);
+    }
+
+    function executeTimerCallback(index) {
+      const timer = softwareTimers[index];
+      timerDaemonTask.state = TASK_RUNNING;
+      timerDaemonTask.executing = timer.callback;
+      timer.lastFired = systemTicks;
+      
+      updateStep(`Timer callback ${timer.callback} executing in timer daemon task`);
+      
+      setTimeout(() => {
+        timerDaemonTask.state = TASK_READY;
+        timerDaemonTask.executing = "";
+      }, 500);
+    }
+
+    function initMillisMode() {
+      tasks.forEach(task => {
+        task.state = TASK_READY;
+        task.code = "millis()";
+        task.timeline = [];
+      });
+      updateStep("Tasks using millis() for non-blocking timing");
+      addTimelineSegment(0, systemTicks, systemTicks + 10, "#4ecdc4", "Ready");
+    }
+
+    function taskCheckTime(taskIndex, method) {
+      const task = tasks[taskIndex];
+      task.state = TASK_RUNNING;
+      task.code = method;
+      task.lastExecution = systemTicks;
+      
+      addTimelineSegment(taskIndex, systemTicks, systemTicks + 5, "#ff6b6b", "Check");
+      
+      setTimeout(() => {
+        task.state = TASK_READY;
+        addTimelineSegment(taskIndex, systemTicks, systemTicks + 5, "#4ecdc4", "Ready");
+      }, 200);
+      
+      updateStep(`${task.name} checking time with ${method} - non-blocking`);
+    }
+
+    function taskTimedAction(taskIndex) {
+      const task = tasks[taskIndex];
+      task.state = TASK_RUNNING;
+      task.code = "Action";
+      
+      addTimelineSegment(taskIndex, systemTicks, systemTicks + 10, "#ff6b6b", "Action");
+      
+      setTimeout(() => {
+        task.state = TASK_READY;
+      }, 300);
+      
+      updateStep(`${task.name} executing timed action`);
+    }
+
+    function initTaskDelayMode() {
+      tasks.forEach(task => {
+        task.state = TASK_READY;
+        task.code = "vTaskDelay()";
+        task.delayTime = 0;
+        task.timeline = [];
+      });
+      updateStep("Tasks using vTaskDelay() for cooperative multitasking");
+    }
+
+    function taskDelay(taskIndex, delayMs) {
+      const task = tasks[taskIndex];
+      task.state = TASK_BLOCKED;
+      task.delayTime = delayMs;
+      task.code = `vTaskDelay(${delayMs})`;
+      
+      addTimelineSegment(taskIndex, systemTicks, systemTicks + delayMs, "#ffd93d", "Blocked");
+      
+      updateStep(`${task.name} blocked for ${delayMs}ms - other tasks can run`);
+    }
+
+    function resumeTask(taskIndex) {
+      const task = tasks[taskIndex];
+      task.state = TASK_RUNNING;
+      task.delayTime = 0;
+      task.code = "Running";
+      
+      addTimelineSegment(taskIndex, systemTicks, systemTicks + 10, "#ff6b6b", "Running");
+      
+      setTimeout(() => {
+        task.state = TASK_READY;
+        addTimelineSegment(taskIndex, systemTicks + 10, systemTicks + 20, "#4ecdc4", "Ready");
+      }, 300);
+      
+      updateStep(`${task.name} resumed execution after delay`);
+    }
+
+    function initDelayMode() {
+      tasks.forEach(task => {
+        task.state = TASK_READY;
+        task.code = "delay()";
+        task.delayTime = 0;
+        task.timeline = [];
+      });
+      updateStep("Tasks using delay() - CPU blocking behavior");
+    }
+
+    function taskBusyDelay(taskIndex, delayMs) {
+      const task = tasks[taskIndex];
+      task.state = TASK_RUNNING;
+      task.delayTime = delayMs;
+      task.code = `delay(${delayMs})`;
+      
+      // Block all other tasks
+      tasks.forEach((t, i) => {
+        if (i !== taskIndex) {
+          t.state = TASK_SUSPENDED;
+          addTimelineSegment(i, systemTicks, systemTicks + delayMs, "#a0a0a0", "Blocked");
+        }
+      });
+      
+      addTimelineSegment(taskIndex, systemTicks, systemTicks + delayMs, "#ef4444", "Busy Wait");
+      
+      updateStep(`${task.name} in delay() - blocking CPU, no task switching possible!`);
+    }
+
+    function taskDelayComplete(taskIndex) {
+      const task = tasks[taskIndex];
+      task.state = TASK_READY;
+      task.delayTime = 0;
+      task.code = "Complete";
+      
+      // Resume other tasks
+      tasks.forEach((t, i) => {
+        if (i !== taskIndex) {
+          t.state = TASK_READY;
+          addTimelineSegment(i, systemTicks, systemTicks + 10, "#4ecdc4", "Ready");
+        }
+      });
+      
+      addTimelineSegment(taskIndex, systemTicks, systemTicks + 10, "#4ecdc4", "Ready");
+      
+      updateStep(`${task.name} delay complete - other tasks can now run`);
+    }
+
+    function addTimelineSegment(taskIndex, start, end, color, label) {
+      tasks[taskIndex].timeline.push({
+        start: start,
+        end: end,
+        color: color,
+        label: label
+      });
+    }
+
+    function advanceTime(ms) {
+      systemTicks += ms;
+      
+      // Check software timers
+      if (currentMode === 0) {
+        softwareTimers.forEach((timer, i) => {
+          if (timer.active && systemTicks >= timer.lastFired + timer.period) {
+            setTimeout(() => executeTimerCallback(i), 100);
+          }
+        });
+      }
+      
+      updateStep(`Time advanced to ${systemTicks}ms`);
+      draw();
+    }
+
+    function updateStep(text) {
+      stepDesc.textContent = text;
+      draw();
+    }
+
+    function nextStep() {
+      const currentSteps = stepDefinitions[currentMode];
+      if (steps < currentSteps.length) {
+        currentSteps[steps]();
+        steps++;
+      }
+    }
+
+    function prevStep() {
+      if (steps > 0) {
+        reset();
+        const currentSteps = stepDefinitions[currentMode];
+        for (let i = 0; i < steps - 1; i++) {
+          currentSteps[i]();
+        }
+        steps = Math.max(0, steps - 1);
+      }
+    }
+
+    function reset() {
+      steps = 0;
+      systemTicks = 0;
+      
+      // Reset all tasks
+      tasks.forEach(task => {
+        task.state = TASK_READY;
+        task.delayTime = 0;
+        task.lastExecution = 0;
+        task.code = "";
+        task.timeline = [];
+      });
+      
+      // Reset software timers
+      softwareTimers.forEach(timer => {
+        timer.active = false;
+        timer.lastFired = 0;
+      });
+      
+      timerDaemonTask.state = TASK_READY;
+      timerDaemonTask.executing = "";
+      
+      if (autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+      }
+      
+      isPaused = false;
+      updateStep(`${modes[currentMode]} mode initialized`);
+    }
+
+    function switchMode() {
+      currentMode = (currentMode + 1) % modes.length;
+      modeIndicator.textContent = `${modes[currentMode]} Mode`;
+      
+      const descriptions = [
+        "Software Timers: Non-blocking callbacks executed by timer daemon task",
+        "millis(): Non-blocking time checks - tasks remain responsive",
+        "vTaskDelay: Blocks calling task, allows other tasks to run",
+        "delay(): Blocks entire CPU - no multitasking possible!"
+      ];
+      
+      reset();
+      updateStep(descriptions[currentMode]);
+    }
+
+    function autoPlay() {
+      if (isPaused) {
+        isPaused = false;
+        return;
+      }
+      
+      reset();
+      const currentSteps = stepDefinitions[currentMode];
+      let i = 0;
+      
+      autoPlayTimer = setInterval(() => {
+        if (isPaused) return;
+        
+        if (i < currentSteps.length) {
+          currentSteps[i]();
+          i++;
+        } else {
+          clearInterval(autoPlayTimer);
+          autoPlayTimer = null;
+        }
+      }, 1500);
+    }
+
+    function pausePlay() {
+      isPaused = !isPaused;
+      if (isPaused && autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+        updateStep("Playback paused");
+      }
+    }
+
+    // Initialize
+    draw();
+  </script>
+</body>
+</html>
