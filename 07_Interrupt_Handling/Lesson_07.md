@@ -1,4 +1,4 @@
-# Lesson 7: Interrupt Handling in FreeRTOS
+# Lesson 7: Interrupt Handling
 
 ## 📚 Prerequisites
 
